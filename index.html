@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Overscroll animation test</title>
+		<link rel=stylesheet href="style.css" type="text/css">
+		<script src="jquery-1.7.1.min.js"></script>
+		<script src="main.js"></script>
+		<script id="vertex_shader" type="x-shader/x-vertex">
+			precision highp float;
+			attribute vec3 pos;
+
+			void main() {
+				gl_Position = vec4(pos.xyz-1.0, 1);
+			}
+		</script>
+		<script id="fragment_shader" type="x-shader/x-fragment">
+			precision highp float;
+			uniform float scroll;
+			uniform vec2 resolution;
+
+			uniform sampler2D sampler;
+			
+			vec3 sample(vec2 co) {
+				if(co.x < 0.0 || co.x > 1.0 || co.y < 0.0 || co.y > 1.0)
+					return vec3(1.0, 0.0, 0.0);
+				return texture2D(sampler, co).rgb;
+			}
+
+			vec2 transform(vec2 coord, float scroll) {
+				float squeeze = 1.0 - scroll;
+				coord.x = coord.x * 2.0 - 1.0;
+				coord = vec2(coord.x / (squeeze - coord.y * -scroll), (coord.y + scroll) * squeeze);
+				coord.x = (coord.x + 1.0) / 2.0;
+				return coord;
+			}
+
+			void main() {
+				float scroll = scroll / resolution.y;
+				vec2 coord = gl_FragCoord.xy / resolution;
+				float scrollcoord = coord.y + scroll;
+				if(scroll == 0.0) {
+					gl_FragColor = vec4(sample(coord), 1.0);
+					return;
+				}
+				if(scrollcoord < 0.0)
+					gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+				else if(scrollcoord > 1.0)
+					gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+				else
+					gl_FragColor = vec4(sample(transform(coord, scroll)), 1.0);
+			}
+		</script>
+	</head>
+	<body>
+		<div class="centered">
+			<img id="mona-lisa" src="monalisa.jpg" style="display: none;">
+			<canvas id="cvs" width="240" height="320"></canvas><br>
+			<br>
+			<button id="button-up">Scroll up</button>
+			<button id="button-down">Scroll down</button>
+		</div>
+	</body>
+</html>
