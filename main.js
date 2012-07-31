@@ -9,6 +9,10 @@ $(document).ready(function() {
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	console.log(gl);
 
+	$('input[name=effect]').change(function() {
+		compileShaders($(this).data('effect'));
+	});
+
 	$('#mona-lisa').bind('load', function() {
 		loadTexture();
 
@@ -18,7 +22,7 @@ $(document).ready(function() {
 		gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
 		gl.viewport(0, 0, 240, 320);
 
-		compileShaders();
+		compileShaders('squeeze');
 
 		$('#button-up'  ).click(function() { animate(-1) });
 		$('#button-down').click(function() { animate( 1) });
@@ -63,9 +67,10 @@ function cleanError(error) {
 	return msg;
 }
 
-function compileShaders() {
+function compileShaders(effect) {
 	vertex_shader = $('#vertex_shader').html();
 	fragment_shader = $('#fragment_shader').html();
+	fragment_shader = fragment_shader.replace('%effect%', effect);
 	var prog = gl.createProgram();
 	var vs = gl.createShader(gl.VERTEX_SHADER), fs = gl.createShader(gl.FRAGMENT_SHADER);
 	gl.shaderSource(vs, vertex_shader);
@@ -90,7 +95,7 @@ function compileShaders() {
 	var pos = gl.getAttribLocation(prog, 'pos');
 	gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
 	gl.enableVertexAttribArray(pos);
-	gl.scroll = gl.getUniformLocation(prog, 'scroll');
+	gl.scroll = gl.getUniformLocation(prog, '_scroll');
 	var res = gl.getUniformLocation(prog, 'resolution');
 	gl.uniform2f(res, 240, 320);
 	var sampler = gl.getUniformLocation(prog, 'sampler');
