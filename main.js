@@ -10,7 +10,17 @@ $(document).ready(function() {
 	console.log(gl);
 
 	$('input[name=effect]').change(function() {
-		compileShaders($(this).data('effect'));
+		var effect = $(this).data('effect');
+		window.location.hash = '#' + effect;
+		compileShaders(effect);
+	});
+
+	$('input[type=range]').change(function() {
+		render(~~$(this).val());
+	});
+	$('#zero').click(function() {
+		$('input[type=range]').val(0);
+		render(0)
 	});
 
 	$('#mona-lisa').bind('load', function() {
@@ -22,7 +32,13 @@ $(document).ready(function() {
 		gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
 		gl.viewport(0, 0, 240, 320);
 
-		compileShaders('squeeze');
+		if(window.location.hash.length < 2)
+			compileShaders('normal');
+		else {
+			var effect = window.location.hash.substring(1);
+			compileShaders(effect);
+			$('input[name=effect][data-effect=' + effect + ']').attr('checked', true);
+		}
 
 		$('#button-up'  ).click(function() { animate(-1) });
 		$('#button-down').click(function() { animate( 1) });
@@ -60,7 +76,7 @@ function cleanError(error) {
 			msg += '<font color="red">ERROR:</font>';
 		else
 			msg += '<font color="yellow">' + escape(match[1]) + ':</font>';
-		msg += ' Line ' + (15 + ~~match[3]) + ': ';
+		msg += ' Line ' + (16 + ~~match[3]) + ': ';
 		msg += escape(match[4]);
 		msg += '<br>';
 	}
@@ -118,7 +134,9 @@ function animate(direction) {
 		else if(step > animSeconds)
 			step = animSeconds * 2 - step;
 
-		render(step * (320 / animSeconds) * direction);
+		var value = step * (320 / animSeconds) * direction;
+		$('input[type=range]').val(value);
+		render(value);
 
 		requestAnimationFrame(subAnimate, cvs);
 	}

@@ -3,6 +3,7 @@
 	<head>
 		<title>Overscroll animation test</title>
 		<link rel=stylesheet href="style.css" type="text/css">
+		<script src="scroll.js"></script>
 		<script src="jquery-1.7.1.min.js"></script>
 		<script src="main.js"></script>
 		<script id="vertex_shader" type="x-shader/x-vertex">
@@ -28,14 +29,27 @@
 				return texture2D(sampler, co).rgb;
 			}
 
+			vec3 normal() {
+				return sample(scrolled);
+			}
+
 			vec3 squeeze() {
 				vec2 sub = (_scroll < 0.0 ? scrolled : coord) / (1.0 - abs(scroll));
 				return sample(sub);
 			}
 
 			vec3 ripple() {
-				vec2 sub = (_scroll < 0.0 ? scrolled : coord) / (1.0 - abs(scroll));
-				sub.x += cos(coord.y * (1.0 - abs(_scroll)) * 0.01) * 0.05;
+				vec2 sub = scrolled;
+				float val = cos((_scroll < 0.0 ? scrolled.y : coord.y) * (1.0 - abs(_scroll)) * 0.05) * 0.05;
+				sub.x += val;
+				sub.y -= sign(_scroll) * val;
+				return sample(sub);
+			}
+
+			vec3 slide() {
+				float dist = 1.0 - abs(coord.y - mod(scroll.y + 1.0, 1.0));
+				vec2 sub = scrolled;
+				sub.y += dist;
 				return sample(sub);
 			}
 
@@ -63,11 +77,14 @@
 			<canvas id="cvs" width="240" height="320"></canvas><br>
 			<br>
 			<button id="button-up">Scroll up</button>
-			<button id="button-down">Scroll down</button>
+			<button id="button-down">Scroll down</button><br>
+			<input type="range" min="-320" max="320" value="0" step="1"><button id="zero">Zero</button><br>
 			<br>
 			Animation:<br>
-			<input type="radio" name="effect" data-effect="squeeze" checked> Squeeze<br>
+			<input type="radio" name="effect" data-effect="normal" checked> Normal<br>
+			<input type="radio" name="effect" data-effect="squeeze"> Squeeze<br>
 			<input type="radio" name="effect" data-effect="ripple"> Ripple<br>
+			<input type="radio" name="effect" data-effect="slide"> Slide<br>
 		</div>
 	</body>
 </html>
