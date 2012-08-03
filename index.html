@@ -41,8 +41,9 @@
 			vec3 ripple() {
 				vec2 sub = scrolled;
 				float val = cos((_scroll < 0.0 ? scrolled.y : coord.y) * (1.0 - abs(_scroll)) * 0.05) * 0.05;
-				sub.x += val;
-				sub.y -= sign(_scroll) * val;
+				float scale = length(scroll);
+				sub.x += val * scale;
+				sub.y -= sign(_scroll) * val * scale;
 				return sample(sub);
 			}
 
@@ -72,19 +73,24 @@
 		</script>
 	</head>
 	<body>
-		<div class="centered">
-			<img id="mona-lisa" src="monalisa.jpg" style="display: none;">
-			<canvas id="cvs" width="240" height="320"></canvas><br>
-			<br>
-			<button id="button-up">Scroll up</button>
-			<button id="button-down">Scroll down</button><br>
-			<input type="range" min="-320" max="320" value="0" step="1"><button id="zero">Zero</button><br>
-			<br>
-			Animation:<br>
-			<input type="radio" name="effect" data-effect="normal" checked> Normal<br>
-			<input type="radio" name="effect" data-effect="squeeze"> Squeeze<br>
-			<input type="radio" name="effect" data-effect="ripple"> Ripple<br>
-			<input type="radio" name="effect" data-effect="slide"> Slide<br>
+		<img id="mona-lisa" src="monalisa.jpg" style="display: none;">
+		<table>
+			<tr>
+				<td>
+					<canvas id="cvs" width="240" height="320"></canvas>
+				</td>
+				<td>
+					<button id="button-up">Scroll up</button>
+					<button id="button-down">Scroll down</button><br>
+					<input type="range" min="-320" max="320" value="0" step="1"><button id="zero">Zero</button><br>
+					<br>
+					Animation:<br>
+					<input type="radio" name="effect" data-effect="normal" checked> Normal<br>
+					<input type="radio" name="effect" data-effect="squeeze"> Squeeze<br>
+					<input type="radio" name="effect" data-effect="ripple"> Ripple<br>
+					<input type="radio" name="effect" data-effect="slide"> Slide<br>
+				</td>
+			</tr>
 		</div>
 	</body>
 </html>
