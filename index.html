@@ -17,7 +17,7 @@
 		<script id="fragment_shader" type="x-shader/x-fragment">
 			precision highp float;
 			uniform float _scroll;
-			uniform float reversing;
+			uniform float reversing, completion;
 			uniform float ramp, easing;
 			uniform vec2 resolution;
 
@@ -38,8 +38,12 @@
 
 			vec3 paper() {
 				vec2 curved = scroll;
-				if(reversing == 1.0)
-					curved.y = sign(curved.y) * pow(abs(curved.y), easing);
+				if(reversing == 1.0) {
+					float rampfactor = 1.0;
+					if(completion < ramp)
+						rampfactor = completion / ramp;
+					curved.y = mix(curved.y, sign(curved.y) * pow(abs(curved.y), easing), rampfactor);
+				}
 				return sample(coord + curved);
 			}
 
@@ -103,6 +107,7 @@
 					<button id="button-drop-up">Drop up</button>
 					<button id="button-drop-down">Drop down</button><br>
 					Position: <input id="position" type="range" min="-320" max="320" value="0" step="1"> <span id="position-val">0</span> <button id="zero">Zero</button><br>
+					Return automatically: <input id="autoreturn" type="checkbox" checked><br>
 					Fake reversal: <input id="fake-reverse" type="checkbox"><br>
 					<br>
 					Ramp up: <input id="ramp" type="range" min="0" max="100" value="10" step="1"> <span id="ramp-val">10</span><br>

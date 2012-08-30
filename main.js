@@ -20,6 +20,14 @@ $(document).ready(function() {
 	});
 
 	$('#position').change(rerender);
+	$('#position').mouseup(function() {
+		if($('#autoreturn').is(':checked'))
+			animateTo(0, true);
+	});
+	$('#autoreturn').change(function() {
+		if($('#autoreturn').is(':checked'))
+			animateTo(0, true);
+	});
 	$('#fake-reverse').change(rerender);
 	$('#ramp').change(function() {
 		rehash();
@@ -67,7 +75,7 @@ $(document).ready(function() {
 });
 
 function rerender() {
-	render(~~$('#position').val(), $('#fake-reverse').is(':checked'))
+	render(~~$('#position').val(), 0, $('#fake-reverse').is(':checked')) // XXX: completion should be factor of distance from zero
 }
 
 function setPosition(scroll) {
@@ -141,6 +149,7 @@ function compileShaders(effect) {
 	gl.enableVertexAttribArray(pos);
 	gl.scroll = gl.getUniformLocation(prog, '_scroll');
 	gl.reversing = gl.getUniformLocation(prog, 'reversing');
+	gl.completion = gl.getUniformLocation(prog, 'completion');
 	gl.ramp = gl.getUniformLocation(prog, 'ramp');
 	gl.easing = gl.getUniformLocation(prog, 'easing');
 	var res = gl.getUniformLocation(prog, 'resolution');
@@ -149,11 +158,12 @@ function compileShaders(effect) {
 	gl.uniform1i(sampler, 0);
 }
 
-function render(scroll, reversing) {
+function render(scroll, completion, reversing) {
 	setPosition(scroll);
 	gl.uniform1f(gl.scroll, scroll);
 	gl.uniform1f(gl.reversing, reversing ? 1 : 0);
-	gl.uniform1f(gl.ramp, $('#ramp').val());
+	gl.uniform1f(gl.completion, completion);
+	gl.uniform1f(gl.ramp, $('#ramp').val() / 100);
 	gl.uniform1f(gl.easing, $('#easing').val());
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
@@ -166,14 +176,14 @@ function animate(direction) {
 		var reversing = false;
 
 		if(step > animSeconds * 2)
-			return render(0);
+			return render(0, 0, false);
 		else if(step > animSeconds) {
 			step = animSeconds * 2 - step;
 			reversing = true;
 		}
 
 		var value = step * (320 / animSeconds) * direction;
-		render(value, reversing);
+		render(value, step, reversing);
 
 		requestAnimationFrame(subAnimate, cvs);
 	}
@@ -183,16 +193,18 @@ function animate(direction) {
 }
 
 function animateTo(value, reversing) {
-	var start = ~~$('input[type=range]').val();
+	var start = ~~$('#position').val();
+	if(start == 0)
+		return;
 	var duration = animSeconds * (Math.abs(start) / 320);
 	function subAnimate() {
 		var step = (new Date() - animStart) / 1000 / duration;
 
 		if(step > duration)
-			return render(0);
+			return render(0, 0, false);
 
 		var value = start - step * (start / duration);
-		render(value, reversing);
+		render(value, step, reversing);
 
 		requestAnimationFrame(subAnimate, cvs);
 	}
