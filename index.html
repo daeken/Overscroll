@@ -17,11 +17,13 @@
 		<script id="fragment_shader" type="x-shader/x-fragment">
 			precision highp float;
 			uniform float _scroll;
+			uniform float reversing;
 			uniform vec2 resolution;
 
 			uniform sampler2D sampler;
 
 			vec2 coord, scroll, scrolled;
+			vec2 scrolldist;
 			
 			vec3 sample(vec2 co) {
 				if(co.x < 0.0 || co.x > 1.0 || co.y < 0.0 || co.y > 1.0)
@@ -31,6 +33,13 @@
 
 			vec3 normal() {
 				return sample(scrolled);
+			}
+
+			vec3 paper() {
+				vec2 curved = scroll;
+				if(reversing == 1.0)
+					curved.y += sign(curved.y) * pow(abs(curved.y), 4.0);
+				return sample(coord + curved);
 			}
 
 			vec3 squeeze() {
@@ -47,11 +56,19 @@
 				return sample(sub);
 			}
 
+			vec2 rotate(vec2 p, float a) {
+				float sa = sin(a), ca = cos(a);
+				return vec2(
+					p.x * ca - p.y * sa, 
+					p.y * ca + p.x * sa
+				);
+			} 
+
 			vec3 slide() {
-				float dist = 1.0 - abs(coord.y - mod(scroll.y + 1.0, 1.0));
-				vec2 sub = scrolled;
-				sub.y += dist;
-				return sample(sub);
+				float angle = acos(1.0 - abs(scroll.y)); // sign(scroll.y) * 
+				vec2 rot = rotate(vec2(scrolled.y, 0.0), angle);
+				vec3 pos = vec3(scrolled.x, rot);
+				return sample(pos.xy);
 			}
 
 			void main() {
@@ -81,11 +98,14 @@
 				</td>
 				<td>
 					<button id="button-up">Scroll up</button>
-					<button id="button-down">Scroll down</button><br>
+					<button id="button-down">Scroll down</button>
+					<button id="button-drop-up">Drop up</button>
+					<button id="button-drop-down">Drop down</button><br>
 					<input type="range" min="-320" max="320" value="0" step="1"><button id="zero">Zero</button><br>
 					<br>
 					Animation:<br>
 					<input type="radio" name="effect" data-effect="normal" checked> Normal<br>
+					<input type="radio" name="effect" data-effect="paper"> Paper<br>
 					<input type="radio" name="effect" data-effect="squeeze"> Squeeze<br>
 					<input type="radio" name="effect" data-effect="ripple"> Ripple<br>
 					<input type="radio" name="effect" data-effect="slide"> Slide<br>
