@@ -18,6 +18,7 @@
 			precision highp float;
 			uniform float _scroll;
 			uniform float reversing;
+			uniform float ramp, easing;
 			uniform vec2 resolution;
 
 			uniform sampler2D sampler;
@@ -38,7 +39,7 @@
 			vec3 paper() {
 				vec2 curved = scroll;
 				if(reversing == 1.0)
-					curved.y += sign(curved.y) * pow(abs(curved.y), 4.0);
+					curved.y = sign(curved.y) * pow(abs(curved.y), easing);
 				return sample(coord + curved);
 			}
 
@@ -80,11 +81,11 @@
 					gl_FragColor = vec4(sample(coord), 1.0);
 					return;
 				}
-				if(scrolled.y < 0.0)
+				/*if(scrolled.y < 0.0)
 					gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
 				else if(scrolled.y > 1.0)
 					gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
-				else
+				else*/
 					gl_FragColor = vec4(%effect%(), 1.0);
 			}
 		</script>
@@ -101,7 +102,11 @@
 					<button id="button-down">Scroll down</button>
 					<button id="button-drop-up">Drop up</button>
 					<button id="button-drop-down">Drop down</button><br>
-					<input type="range" min="-320" max="320" value="0" step="1"><button id="zero">Zero</button><br>
+					Position: <input id="position" type="range" min="-320" max="320" value="0" step="1"> <span id="position-val">0</span> <button id="zero">Zero</button><br>
+					Fake reversal: <input id="fake-reverse" type="checkbox"><br>
+					<br>
+					Ramp up: <input id="ramp" type="range" min="0" max="100" value="10" step="1"> <span id="ramp-val">10</span><br>
+					Easing factor: <input id="easing" type="range" min="1" max="10" value="3" step="1"> <span id="easing-val">3</span><br>
 					<br>
 					Animation:<br>
 					<input type="radio" name="effect" data-effect="normal" checked> Normal<br>

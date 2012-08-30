@@ -2,6 +2,11 @@ var cvs, gl;
 
 window.requestAnimationFrame = window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame;
 
+function rehash() {
+	var effect = $('input[name=effect]:checked').data('effect');
+	window.location.hash = '#' + effect + '&' + $('#ramp').val() + '&' + $('#easing').val();
+}
+
 $(document).ready(function() {
 	cvs = $('#cvs')[0];
 	gl = cvs.getContext('experimental-webgl');
@@ -10,12 +15,22 @@ $(document).ready(function() {
 	
 	$('input[name=effect]').change(function() {
 		var effect = $(this).data('effect');
-		window.location.hash = '#' + effect;
+		rehash();
 		compileShaders(effect);
 	});
 
-	$('input[type=range]').change(function() {
-		render(~~$(this).val());
+	$('#position').change(rerender);
+	$('#fake-reverse').change(rerender);
+	$('#ramp').change(function() {
+		rehash();
+		$('#ramp-val').text($(this).val());
+		rerender();
+
+	});
+	$('#easing').change(function() {
+		rehash();
+		$('#easing-val').text($(this).val());
+		rerender();
 	});
 	$('#zero').click(function() {
 		animateTo(0, true)
@@ -33,20 +48,32 @@ $(document).ready(function() {
 		if(window.location.hash.length < 2)
 			compileShaders('normal');
 		else {
-			var effect = window.location.hash.substring(1);
+			var hash = window.location.hash.substring(1).split('&');
+			var effect = hash[0], ramp = ~~hash[1], easing = ~~hash[2];
 			compileShaders(effect);
 			$('input[name=effect][data-effect=' + effect + ']').attr('checked', true);
+			$('#ramp').val(ramp); $('#ramp-val').text(ramp);
+			$('#easing').val(easing); $('#easing-val').text(easing);
 		}
 
 		$('#button-up'  ).click(function() { animate(-1) });
 		$('#button-down').click(function() { animate( 1) });
 
-		$('#button-drop-up').click(function() { $('input[type=range]').val(-320); animateTo(0, true) });
-		$('#button-drop-down').click(function() { $('input[type=range]').val(320); animateTo(0, true) });
+		$('#button-drop-up').click(function() { setPosition(-320); animateTo(0, true) });
+		$('#button-drop-down').click(function() { setPosition(320); animateTo(0, true) });
 
 		render(0);
 	})
 });
+
+function rerender() {
+	render(~~$('#position').val(), $('#fake-reverse').is(':checked'))
+}
+
+function setPosition(scroll) {
+	$('#position').val(scroll);
+	$('#position-val').text(~~scroll);
+}
 
 function loadTexture() {
 	var tex = gl.createTexture();
@@ -114,6 +141,8 @@ function compileShaders(effect) {
 	gl.enableVertexAttribArray(pos);
 	gl.scroll = gl.getUniformLocation(prog, '_scroll');
 	gl.reversing = gl.getUniformLocation(prog, 'reversing');
+	gl.ramp = gl.getUniformLocation(prog, 'ramp');
+	gl.easing = gl.getUniformLocation(prog, 'easing');
 	var res = gl.getUniformLocation(prog, 'resolution');
 	gl.uniform2f(res, 240, 320);
 	var sampler = gl.getUniformLocation(prog, 'sampler');
@@ -121,9 +150,11 @@ function compileShaders(effect) {
 }
 
 function render(scroll, reversing) {
-	$('input[type=range]').val(scroll);
+	setPosition(scroll);
 	gl.uniform1f(gl.scroll, scroll);
 	gl.uniform1f(gl.reversing, reversing ? 1 : 0);
+	gl.uniform1f(gl.ramp, $('#ramp').val());
+	gl.uniform1f(gl.easing, $('#easing').val());
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
