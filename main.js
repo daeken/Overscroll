@@ -4,7 +4,7 @@ window.requestAnimationFrame = window.mozRequestAnimationFrame || window.webkitR
 
 function rehash() {
 	var effect = $('input[name=effect]:checked').data('effect');
-	window.location.hash = '#' + effect + '&' + $('#ramp').val() + '&' + $('#easing').val();
+	window.location.hash = '#' + effect + '&' + $('#ramp').val() + '&' + $('#easing').val() + '&' + $('#duration').val();
 }
 
 $(document).ready(function() {
@@ -44,6 +44,11 @@ $(document).ready(function() {
 		animateTo(0, true)
 	});
 
+	$('#duration').change(function() {
+		rehash();
+		$('#duration-val').text($(this).val());
+	});
+
 	$('#mona-lisa').bind('load', function() {
 		loadTexture();
 
@@ -57,11 +62,16 @@ $(document).ready(function() {
 			compileShaders('normal');
 		else {
 			var hash = window.location.hash.substring(1).split('&');
-			var effect = hash[0], ramp = ~~hash[1], easing = ~~hash[2];
+			var defaults = ['paper', 10, 3, 1.0];
+			for(var i in defaults)
+				if(hash[i] === undefined)
+					hash[i] = defaults[i];
+			var effect = hash[0], ramp = ~~hash[1], easing = ~~hash[2], duration = parseFloat(hash[3]);
 			compileShaders(effect);
 			$('input[name=effect][data-effect=' + effect + ']').attr('checked', true);
 			$('#ramp').val(ramp); $('#ramp-val').text(ramp);
 			$('#easing').val(easing); $('#easing-val').text(easing);
+			$('#duration').val(duration); $('#duration-val').text(duration);
 		}
 
 		$('#button-up'  ).click(function() { animate(-1) });
@@ -168,22 +178,21 @@ function render(scroll, completion, reversing) {
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
-var animSeconds = 1;
-
 function animate(direction) {
+	var animSeconds = $('#duration').val();
 	function subAnimate() {
-		var step = (new Date() - animStart) / 1000 / animSeconds;
+		var ostep = (new Date() - animStart) / 1000 / animSeconds, step = ostep;
 		var reversing = false;
 
-		if(step > animSeconds * 2)
+		if(step > 2.0)
 			return render(0, 0, false);
-		else if(step > animSeconds) {
-			step = animSeconds * 2 - step;
+		else if(step > 1.0) {
+			step = 2 - step;
 			reversing = true;
 		}
 
-		var value = step * (320 / animSeconds) * direction;
-		render(value, step, reversing);
+		var value = step * 320 * direction;
+		render(value, ostep / 2.0, reversing);
 
 		requestAnimationFrame(subAnimate, cvs);
 	}
@@ -196,14 +205,15 @@ function animateTo(value, reversing) {
 	var start = ~~$('#position').val();
 	if(start == 0)
 		return;
+	var animSeconds = $('#duration').val();
 	var duration = animSeconds * (Math.abs(start) / 320);
 	function subAnimate() {
 		var step = (new Date() - animStart) / 1000 / duration;
 
-		if(step > duration)
+		if(step >= 1.0)
 			return render(0, 0, false);
 
-		var value = start - step * (start / duration);
+		var value = start - step * start;
 		render(value, step, reversing);
 
 		requestAnimationFrame(subAnimate, cvs);
